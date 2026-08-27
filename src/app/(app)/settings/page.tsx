@@ -6,7 +6,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
   themes,
-  backgroundPresets,
   useAppearance,
 } from "@/components/layout/appearance-provider"
 import {
@@ -25,7 +24,6 @@ export default function SettingsPage() {
     theme,
     setTheme,
     background,
-    setPresetBackground,
     uploadCustomBackground,
     updateOpacity,
     updateBlur,
@@ -148,50 +146,6 @@ export default function SettingsPage() {
                 Personalisasi tampilan dashboard, transaksi, dan halaman lainnya dengan foto
                 atau pola pilihan Anda.
               </p>
-            </div>
-
-            {/* Presets */}
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 block">
-                Pilihan Preset Pola
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {backgroundPresets.map((preset) => {
-                  const isSelected =
-                    background.enabled &&
-                    background.type === "preset" &&
-                    background.presetId === preset.id
-
-                  return (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      onClick={() => setPresetBackground(preset.id)}
-                      className={`relative flex flex-col items-center gap-2 p-3 rounded-lg border text-center transition-all ${
-                        isSelected
-                          ? "border-primary ring-2 ring-primary/20 bg-primary/5"
-                          : "border-gray-200 hover:bg-gray-50"
-                      }`}
-                    >
-                      <div
-                        className="h-12 w-full rounded border bg-surface overflow-hidden relative"
-                        style={{
-                          backgroundImage: `url("${preset.url}")`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                          opacity: 0.6,
-                        }}
-                      />
-                      <span className="text-xs font-medium">{preset.name}</span>
-                      {isSelected && (
-                        <div className="absolute top-2 right-2 h-4 w-4 bg-primary text-white rounded-full flex items-center justify-center">
-                          <Check className="h-3 w-3" />
-                        </div>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
             </div>
 
             {/* Upload Custom Image */}
