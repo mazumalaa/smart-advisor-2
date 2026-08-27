@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react";
-import { transactions as initialTransactions } from "@/data/mockData";
+import { products, transactions as initialTransactions } from "@/data/mockData";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,9 @@ import { Modal } from "@/components/ui/modal";
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState(initialTransactions);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [feedback, setFeedback] = useState("");
   const [newTrx, setNewTrx] = useState({
+    product: products[0].name,
     productCount: "",
     total: "",
     payment: "QRIS",
@@ -21,6 +23,8 @@ export default function TransactionsPage() {
   const handleSaveTransaction = () => {
     const trx = {
       id: `TRX-${Math.floor(Math.random() * 100000)}`,
+      product: newTrx.product,
+      time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
       date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
       productCount: parseInt(newTrx.productCount) || 1,
       total: parseInt(newTrx.total) || 0,
@@ -29,11 +33,12 @@ export default function TransactionsPage() {
     };
     setTransactions([trx, ...transactions]);
     setIsAddModalOpen(false);
-    setNewTrx({ productCount: "", total: "", payment: "QRIS" });
-    alert("Transaksi berhasil ditambahkan!");
+    setNewTrx({ product: products[0].name, productCount: "", total: "", payment: "QRIS" });
+    setFeedback("Transaksi berhasil ditambahkan.");
   };
   const columns = [
     { key: "id", header: "ID Transaksi" },
+    { key: "time", header: "Waktu", render: (item: any) => item.time || "-" },
     { key: "date", header: "Tanggal" },
     { key: "productCount", header: "Jumlah Produk", render: (item: any) => `${item.productCount} item` },
     { 
@@ -75,6 +80,8 @@ export default function TransactionsPage() {
         <Button variant="outline"><Filter className="h-4 w-4 mr-2" /> Filter</Button>
       </div>
 
+      {feedback && <p className="text-sm text-success" role="status">{feedback}</p>}
+
       <DataTable data={transactions} columns={columns} />
 
       <Modal 
@@ -89,7 +96,17 @@ export default function TransactionsPage() {
         }
       >
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Produk</label>
+              <select
+                className="flex h-10 w-full rounded-md border border-gray-200 bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                value={newTrx.product}
+                onChange={e => setNewTrx({...newTrx, product: e.target.value})}
+              >
+                {products.map(product => <option key={product.id} value={product.name}>{product.name}</option>)}
+              </select>
+            </div>
             <div>
               <label className="block text-sm font-medium mb-1">Jumlah Item</label>
               <Input 

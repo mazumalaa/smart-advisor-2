@@ -1,7 +1,10 @@
-import { aiRecommendations } from "@/data/mockData";
+import { aiRecommendations, transactions } from "@/data/mockData";
 import { RecommendationCard } from "@/components/recommendations/recommendation-card";
+import { createSalesInsight } from "@/lib/sales-insights";
 
 export default function RecommendationsPage() {
+  const salesInsight = createSalesInsight(transactions);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div>
@@ -17,6 +20,12 @@ export default function RecommendationsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <RecommendationCard
+          priority={salesInsight.priority}
+          title={salesInsight.title}
+          description={salesInsight.description}
+          actionText={salesInsight.action}
+        />
         {aiRecommendations.map((rec) => (
           <RecommendationCard 
             key={rec.id}

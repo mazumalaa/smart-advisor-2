@@ -11,17 +11,28 @@ import {
   TrendingUp, 
   Lightbulb, 
   Archive, 
-  Settings 
+  Settings,
+  Bell,
+  UserCircle2,
+  type LucideIcon,
 } from "lucide-react"
 
-const navItems = [
+type NavItem = {
+  title: string
+  href: string
+  icon: LucideIcon
+}
+
+const navItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "Produk", href: "/products", icon: Package },
   { title: "Transaksi", href: "/transactions", icon: Receipt },
   { title: "Inventori", href: "/inventory", icon: Archive },
+  { title: "Profil", href: "/profile", icon: UserCircle2 },
+  { title: "Notifikasi", href: "/notifications", icon: Bell },
 ]
 
-const insightItems = [
+const insightItems: NavItem[] = [
   { title: "Analitik", href: "/analytics", icon: BarChart3 },
   { title: "AI Forecast", href: "/forecast", icon: TrendingUp },
   { title: "Rekomendasi", href: "/recommendations", icon: Lightbulb },
@@ -30,7 +41,7 @@ const insightItems = [
 export function Sidebar() {
   const pathname = usePathname()
 
-  const NavLink = ({ item }: { item: any }) => {
+  const NavLink = ({ item }: { item: NavItem }) => {
     const isActive = pathname === item.href
     return (
       <Link

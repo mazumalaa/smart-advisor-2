@@ -1,5 +1,62 @@
 // Mock Data for UMKM Smart Advisor Prototype
 
+export const profileData = {
+  fullName: "Andi Pratama",
+  email: "andi@kopisenja.com",
+  phone: "+628123456789",
+  address: "Jl. Merdeka No. 12, Bandung, Jawa Barat",
+  profilePhoto: "https://api.dicebear.com/7.x/notionists/svg?seed=Andi",
+};
+
+export const businessData = {
+  businessName: "Kopi Senja",
+  ownerName: "Andi Pratama",
+  businessType: "Coffee Shop",
+  businessAddress: "Jl. Merdeka No. 12, Bandung, Jawa Barat",
+  businessPhone: "+628123456789",
+  businessEmail: "hello@kopisenja.com",
+  logo: "/images/logo.jpg",
+};
+
+export const notifications = [
+  {
+    id: "N001",
+    title: "Stok Rendah",
+    description: "Kopi Susu tersisa 12 unit. Segera lakukan restock.",
+    category: "inventory",
+    createdAt: "2026-08-27T09:00:00",
+    isRead: false,
+    priority: "high",
+  },
+  {
+    id: "N002",
+    title: "Update Penjualan",
+    description: "Pendapatan naik 18% dibanding hari sebelumnya.",
+    category: "sales",
+    createdAt: "2026-08-27T08:30:00",
+    isRead: true,
+    priority: "medium",
+  },
+  {
+    id: "N003",
+    title: "Pembayaran diterima",
+    description: "Invoice #INV-1024 telah dibayar oleh pelanggan.",
+    category: "payment",
+    createdAt: "2026-08-26T16:45:00",
+    isRead: false,
+    priority: "high",
+  },
+  {
+    id: "N004",
+    title: "Rekomendasi stok",
+    description: "Prediksi permintaan produk meningkat pada akhir pekan.",
+    category: "recommendation",
+    createdAt: "2026-08-26T14:00:00",
+    isRead: true,
+    priority: "low",
+  },
+];
+
 export const businessProfile = {
   name: "Kopi Senja",
   owner: "Andi Pratama",
@@ -15,13 +72,37 @@ export const products = [
   { id: "P006", name: "Donat", category: "Makanan", price: 12000, stock: 32, minStock: 10, status: "Available" },
 ];
 
-export const transactions = [
-  { id: "TRX-00124", date: "23 Aug 2026", productCount: 3, total: 75000, payment: "QRIS", status: "Selesai" },
-  { id: "TRX-00125", date: "23 Aug 2026", productCount: 1, total: 20000, payment: "Cash", status: "Selesai" },
-  { id: "TRX-00126", date: "23 Aug 2026", productCount: 5, total: 105000, payment: "QRIS", status: "Selesai" },
-  { id: "TRX-00127", date: "24 Aug 2026", productCount: 2, total: 40000, payment: "Cash", status: "Selesai" },
-  { id: "TRX-00128", date: "24 Aug 2026", productCount: 4, total: 85000, payment: "QRIS", status: "Selesai" },
-  { id: "TRX-00129", date: "25 Aug 2026", productCount: 3, total: 65000, payment: "QRIS", status: "Selesai" },
+export const productCategories = [
+  "Makanan",
+  "Minuman",
+  "Pakaian dan Fashion",
+  "Kecantikan dan Perawatan",
+  "Rumah Tangga",
+  "Elektronik",
+  "Mainan",
+  "Jasa",
+  "Produk Digital",
+  "Lainnya",
+];
+
+export interface Transaction {
+  id: string;
+  product: string;
+  time: string;
+  date: string;
+  productCount: number;
+  total: number;
+  payment: string;
+  status: string;
+}
+
+export const transactions: Transaction[] = [
+  { id: "TRX-00124", product: "Kopi Susu", time: "08:15", date: "23 Aug 2026", productCount: 3, total: 75000, payment: "QRIS", status: "Selesai" },
+  { id: "TRX-00125", product: "Kopi Susu", time: "09:40", date: "23 Aug 2026", productCount: 1, total: 20000, payment: "Cash", status: "Selesai" },
+  { id: "TRX-00126", product: "Americano", time: "11:20", date: "23 Aug 2026", productCount: 5, total: 105000, payment: "QRIS", status: "Selesai" },
+  { id: "TRX-00127", product: "Croissant", time: "14:05", date: "24 Aug 2026", productCount: 2, total: 40000, payment: "Cash", status: "Selesai" },
+  { id: "TRX-00128", product: "Kopi Susu", time: "16:30", date: "24 Aug 2026", productCount: 4, total: 85000, payment: "QRIS", status: "Selesai" },
+  { id: "TRX-00129", product: "Kopi Susu", time: "19:15", date: "25 Aug 2026", productCount: 3, total: 65000, payment: "QRIS", status: "Selesai" },
 ];
 
 export const salesAnalytics = {

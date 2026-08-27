@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Package, Receipt, Archive } from "lucide-react"
+import { LayoutDashboard, Package, Receipt, Archive, UserCircle2, Bell } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -10,6 +10,8 @@ const navItems = [
   { title: "Produk", href: "/products", icon: Package },
   { title: "Transaksi", href: "/transactions", icon: Receipt },
   { title: "Inventori", href: "/inventory", icon: Archive },
+  { title: "Profil", href: "/profile", icon: UserCircle2 },
+  { title: "Notif", href: "/notifications", icon: Bell },
 ]
 
 export function BottomNav() {

@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react";
-import { products as initialProducts } from "@/data/mockData";
+import { productCategories, products as initialProducts } from "@/data/mockData";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { Modal } from "@/components/ui/modal";
 export default function ProductsPage() {
   const [products, setProducts] = useState(initialProducts);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState("");
+  const [feedback, setFeedback] = useState("");
   
   // New product form state
   const [newProduct, setNewProduct] = useState({
@@ -33,9 +35,10 @@ export default function ProductsPage() {
     };
     setProducts([p, ...products]);
     setIsAddModalOpen(false);
+    setCategorySearch("");
     // Reset form
     setNewProduct({ name: "", category: "Minuman", price: "", stock: "", minStock: "" });
-    alert("Produk berhasil ditambahkan!");
+    setFeedback("Produk berhasil ditambahkan.");
   };
 
   const columns = [
@@ -85,6 +88,8 @@ export default function ProductsPage() {
         <Button variant="outline"><Filter className="h-4 w-4 mr-2" /> Filter</Button>
       </div>
 
+      {feedback && <p className="text-sm text-success" role="status">{feedback}</p>}
+
       <DataTable data={products} columns={columns} />
 
       <Modal 
@@ -107,7 +112,7 @@ export default function ProductsPage() {
               onChange={e => setNewProduct({...newProduct, name: e.target.value})}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Harga</label>
               <Input 
@@ -117,17 +122,36 @@ export default function ProductsPage() {
                 onChange={e => setNewProduct({...newProduct, price: e.target.value})} 
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-medium mb-1">Kategori</label>
-              <select 
-                className="flex h-10 w-full rounded-md border border-gray-200 bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                value={newProduct.category}
-                onChange={e => setNewProduct({...newProduct, category: e.target.value})}
-              >
-                <option value="Minuman">Minuman</option>
-                <option value="Makanan">Makanan</option>
-                <option value="Lainnya">Lainnya</option>
-              </select>
+              <Input
+                placeholder="Cari kategori..."
+                value={categorySearch}
+                onChange={e => setCategorySearch(e.target.value)}
+                aria-label="Cari kategori"
+              />
+              <div className="mt-2 max-h-32 overflow-y-auto rounded-md border border-gray-200 p-2" role="listbox" aria-label="Daftar kategori">
+                <div className="grid grid-cols-3 gap-2">
+                  {productCategories
+                    .filter(category => category.toLowerCase().includes(categorySearch.toLowerCase()))
+                    .map(category => (
+                      <button
+                        key={category}
+                        type="button"
+                        role="option"
+                        aria-selected={newProduct.category === category}
+                        onClick={() => setNewProduct({...newProduct, category})}
+                        className={`min-h-12 rounded-md border px-2 py-2 text-xs font-medium text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${newProduct.category === category ? "border-primary bg-primary/10 text-primary" : "border-gray-200 hover:bg-gray-50"}`}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                </div>
+                {!productCategories.some(category => category.toLowerCase().includes(categorySearch.toLowerCase())) && (
+                  <p className="px-2 py-3 text-center text-sm text-muted">Kategori tidak ditemukan.</p>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-muted">Terpilih: {newProduct.category}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
