@@ -176,8 +176,8 @@ export const aiRecommendations = [
   {
     id: 3,
     priority: "LOW",
-    title: "Analisis Kinerja Donat",
-    description: "Inventory turnover Donat relatif rendah. Pertimbangkan untuk menyesuaikan jumlah produksi harian.",
+    title: "Analisis Kinerja produk",
+    description: "penjualan donat pada jam 10:00-12:00 cenderung rendah, disarankan untuk menyesuaikan strategi pemasaran.",
     action: "Lihat Detail",
   }
 ];
