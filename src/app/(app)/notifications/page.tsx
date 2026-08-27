@@ -125,7 +125,7 @@ export default function NotificationsPage() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
-                      {categoryLabels[item.category]}
+                      {categoryLabels[item.category as keyof typeof categoryLabels]}
                     </span>
                     {!item.isRead && (
                       <span className="inline-flex rounded-full bg-primary px-2 py-1 text-[10px] font-semibold text-white">
