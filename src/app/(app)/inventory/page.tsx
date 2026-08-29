@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export default function InventoryPage() {
   const columns = [
+    { key: "id", header: "ID Produk" },
     { key: "name", header: "Produk" },
     { key: "stock", header: "Stok Saat Ini", render: (item: any) => <span className="font-bold">{item.stock}</span> },
     { key: "minStock", header: "Stok Minimum", render: (item: any) => <span className="text-muted">{item.minStock}</span> },

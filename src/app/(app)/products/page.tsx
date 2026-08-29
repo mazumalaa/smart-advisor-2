@@ -1,5 +1,6 @@
 "use client"
 import { useState } from "react";
+import { QRCodeCanvas } from "qrcode.react";
 import { productCategories, products as initialProducts } from "@/data/mockData";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +12,10 @@ import { Modal } from "@/components/ui/modal";
 export default function ProductsPage() {
   const [products, setProducts] = useState(initialProducts);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [savedProduct, setSavedProduct] = useState<any>(null);
   
   // New product form state
   const [newProduct, setNewProduct] = useState({
@@ -34,7 +37,9 @@ export default function ProductsPage() {
       status: parseInt(newProduct.stock) <= parseInt(newProduct.minStock) ? "Low Stock" : "Available"
     };
     setProducts([p, ...products]);
+    setSavedProduct(p);
     setIsAddModalOpen(false);
+    setIsQRModalOpen(true);
     setCategorySearch("");
     // Reset form
     setNewProduct({ name: "", category: "Minuman", price: "", stock: "", minStock: "" });
@@ -42,6 +47,7 @@ export default function ProductsPage() {
   };
 
   const columns = [
+    { key: "id", header: "ID Produk" },
     { key: "name", header: "Produk" },
     { key: "category", header: "Kategori" },
     { 
@@ -130,8 +136,8 @@ export default function ProductsPage() {
                 onChange={e => setCategorySearch(e.target.value)}
                 aria-label="Cari kategori"
               />
-              <div className="mt-2 max-h-32 overflow-y-auto rounded-md border border-gray-200 p-2" role="listbox" aria-label="Daftar kategori">
-                <div className="grid grid-cols-3 gap-2">
+              <div className="mt-2 max-h-48 overflow-y-auto rounded-md border border-gray-200" role="listbox" aria-label="Daftar kategori">
+                <div className="flex flex-col">
                   {productCategories
                     .filter(category => category.toLowerCase().includes(categorySearch.toLowerCase()))
                     .map(category => (
@@ -141,7 +147,7 @@ export default function ProductsPage() {
                         role="option"
                         aria-selected={newProduct.category === category}
                         onClick={() => setNewProduct({...newProduct, category})}
-                        className={`min-h-12 rounded-md border px-2 py-2 text-xs font-medium text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${newProduct.category === category ? "border-primary bg-primary/10 text-primary" : "border-gray-200 hover:bg-gray-50"}`}
+                        className={`w-full px-4 py-3 text-sm font-medium text-left transition-colors border-b last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${newProduct.category === category ? "bg-primary/10 text-primary border-primary" : "hover:bg-gray-50 border-gray-200"}`}
                       >
                         {category}
                       </button>
@@ -173,6 +179,37 @@ export default function ProductsPage() {
                 onChange={e => setNewProduct({...newProduct, minStock: e.target.value})} 
               />
             </div>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal 
+        isOpen={isQRModalOpen} 
+        onClose={() => setIsQRModalOpen(false)} 
+        title="Produk Berhasil Ditambahkan"
+        footer={
+          <Button onClick={() => setIsQRModalOpen(false)}>Tutup</Button>
+        }
+      >
+        <div className="flex flex-col items-center gap-6">
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+              {savedProduct && (
+    <QRCodeCanvas
+      value={JSON.stringify({
+        id: savedProduct.id,
+        name: savedProduct.name,
+      })}
+      size={200}
+    />
+  )}
+            
+          </div>
+          <div className="w-full space-y-2 text-center">
+            <h3 className="font-semibold text-lg">{savedProduct?.name}</h3>
+            <p className="text-sm text-muted">ID: {savedProduct?.id}</p>
+            <p className="text-sm text-muted">Kategori: {savedProduct?.category}</p>
+            <p className="text-sm font-medium">Harga: Rp {savedProduct?.price.toLocaleString('id-ID')}</p>
+            <p className="text-sm text-muted">Stok: {savedProduct?.stock} unit</p>
           </div>
         </div>
       </Modal>
