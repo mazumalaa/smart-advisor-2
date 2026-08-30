@@ -110,7 +110,7 @@ export default function NotificationsPage() {
 
         <CardContent className="space-y-3">
           {filteredItems.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-6 py-10 text-center">
+            <div className="rounded-lg border border-dashed border-border bg-muted/30 px-6 py-10 text-center">
               <p className="font-medium">Tidak ada notifikasi</p>
               <p className="mt-1 text-sm text-muted">Semua pemberitahuan baru akan muncul di sini.</p>
             </div>
@@ -119,12 +119,12 @@ export default function NotificationsPage() {
               <div
                 key={item.id}
                 className={`flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-start sm:justify-between ${
-                  item.isRead ? "border-gray-200 bg-white" : "border-primary/20 bg-primary/5"
+                  item.isRead ? "border-border bg-card" : "border-primary/20 bg-primary/5"
                 }`}
               >
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                    <span className="inline-flex rounded-full bg-muted px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                       {categoryLabels[item.category as keyof typeof categoryLabels]}
                     </span>
                     {!item.isRead && (
@@ -135,7 +135,7 @@ export default function NotificationsPage() {
                   </div>
 
                   <div>
-                    <p className="font-semibold">{item.title}</p>
+                    <p className="font-semibold text-foreground">{item.title}</p>
                     <p className="mt-1 text-sm text-muted">{item.description}</p>
                   </div>
 
@@ -143,7 +143,7 @@ export default function NotificationsPage() {
                 </div>
 
                 <div className="flex items-center gap-2 self-start sm:self-center">
-                  <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] font-medium uppercase text-muted">
+                  <span className="rounded-full bg-muted px-2 py-1 text-[10px] font-medium uppercase text-muted-foreground">
                     {item.priority}
                   </span>
                   {!item.isRead ? (
