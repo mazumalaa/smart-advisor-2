@@ -44,8 +44,11 @@ const STATIC_RECOMMENDATIONS = [
   },
 ];
 
+type PriorityFilter = "ALL" | "HIGH" | "MEDIUM" | "LOW";
+
 export default function RecommendationsPage() {
   const [salesInsight, setSalesInsight] = useState<SalesInsight>(FALLBACK_INSIGHT);
+  const [selectedPriority, setSelectedPriority] = useState<PriorityFilter>("ALL");
 
   useEffect(() => {
     const load = async () => {
@@ -82,6 +85,29 @@ export default function RecommendationsPage() {
     load();
   }, []);
 
+  const priorityOptions: PriorityFilter[] = ["ALL", "HIGH", "MEDIUM", "LOW"];
+
+  const recommendations = [
+    {
+      id: "insight",
+      priority: salesInsight.priority,
+      title: salesInsight.title,
+      description: salesInsight.description,
+      action: salesInsight.action,
+    },
+    ...STATIC_RECOMMENDATIONS.map((rec) => ({
+      id: rec.id,
+      priority: rec.priority,
+      title: rec.title,
+      description: rec.description,
+      action: rec.action,
+    })),
+  ];
+
+  const filteredRecommendations = recommendations.filter((item) =>
+    selectedPriority === "ALL" ? true : item.priority === selectedPriority
+  );
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div>
@@ -92,28 +118,43 @@ export default function RecommendationsPage() {
       </div>
 
       <div className="flex gap-2 pb-2 overflow-x-auto">
-        <button className="px-4 py-2 rounded-full bg-primary text-white text-sm font-medium">Semua</button>
-        <button className="px-4 py-2 rounded-full border border-gray-200 bg-surface text-foreground text-sm font-medium hover:bg-gray-50">High</button>
-        <button className="px-4 py-2 rounded-full border border-gray-200 bg-surface text-foreground text-sm font-medium hover:bg-gray-50">Medium</button>
-        <button className="px-4 py-2 rounded-full border border-gray-200 bg-surface text-foreground text-sm font-medium hover:bg-gray-50">Low</button>
+        {priorityOptions.map((option) => {
+          const label = option === "ALL" ? "Semua" : option;
+          const isActive = selectedPriority === option;
+
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setSelectedPriority(option)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-primary text-white"
+                  : "border border-gray-200 bg-surface text-foreground hover:bg-gray-50"
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        <RecommendationCard
-          priority={salesInsight.priority}
-          title={salesInsight.title}
-          description={salesInsight.description}
-          actionText={salesInsight.action}
-        />
-        {STATIC_RECOMMENDATIONS.map((rec) => (
-          <RecommendationCard
-            key={rec.id}
-            priority={rec.priority}
-            title={rec.title}
-            description={rec.description}
-            actionText={rec.action}
-          />
-        ))}
+        {filteredRecommendations.length > 0 ? (
+          filteredRecommendations.map((rec) => (
+            <RecommendationCard
+              key={rec.id}
+              priority={rec.priority}
+              title={rec.title}
+              description={rec.description}
+              actionText={rec.action}
+            />
+          ))
+        ) : (
+          <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-surface p-6 text-sm text-muted">
+            Tidak ada rekomendasi untuk prioritas yang dipilih.
+          </div>
+        )}
       </div>
 
       {/* TODO: Simpan rekomendasi AI ke tabel ai_recommendations jika dibutuhkan persistensi */}

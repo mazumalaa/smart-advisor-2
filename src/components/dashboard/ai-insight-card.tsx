@@ -18,7 +18,7 @@ export function AIInsightCard({ summary, onViewDetails }: AIInsightCardProps) {
           </div>
           <div className="space-y-3 flex-1">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              ✨ AI Business Insight
+             AI Business Insight
             </h3>
             <p className="text-sm text-white/90 leading-relaxed font-medium">
               {summary}

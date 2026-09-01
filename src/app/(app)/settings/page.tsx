@@ -1,9 +1,11 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useState, useRef } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Modal } from "@/components/ui/modal"
 import {
   themes,
   useAppearance,
@@ -18,8 +20,10 @@ import {
   AlertCircle,
   UserCircle2,
 } from "@/components/ui/icons"
+import { supabase } from "@/lib/supabaseClient"
 
 export default function SettingsPage() {
+  const router = useRouter()
   const {
     theme,
     setTheme,
@@ -33,7 +37,21 @@ export default function SettingsPage() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [dragActive, setDragActive] = useState(false)
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleLogout = async () => {
+    setIsLogoutConfirmOpen(false)
+
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      console.error("Logout failed:", error)
+      return
+    }
+
+    router.replace("/login")
+    router.refresh()
+  }
 
   const handleFileChange = async (file: File) => {
     setUploadError(null)
@@ -316,8 +334,33 @@ export default function SettingsPage() {
       </Card>
 
       <div className="pt-4">
-        <Button variant="critical">Logout</Button>
+        <Button variant="critical" onClick={() => setIsLogoutConfirmOpen(true)}>Logout</Button>
       </div>
+
+      <Modal
+        isOpen={isLogoutConfirmOpen}
+        onClose={() => setIsLogoutConfirmOpen(false)}
+        title="Konfirmasi logout"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setIsLogoutConfirmOpen(false)}>
+              Batal
+            </Button>
+            <Button variant="critical" onClick={handleLogout}>
+              Ya, keluar
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-2">
+          <p className="text-sm text-muted">
+            Anda yakin ingin keluar dari akun ini?
+          </p>
+          <p className="text-sm text-muted">
+            Anda akan diarahkan kembali ke halaman login.
+          </p>
+        </div>
+      </Modal>
     </div>
   )
 }

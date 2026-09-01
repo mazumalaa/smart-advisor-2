@@ -1,5 +1,6 @@
 "use client"
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { QRCodeCanvas } from "qrcode.react";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentBusinessId } from "@/lib/business";
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Search, Filter } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { ensureProductLowStockNotification } from "@/lib/notifications";
 
 function getProductStatus(stock: number, minStock: number) {
   if (stock <= 0) return "Out of Stock" as const;
@@ -18,14 +20,24 @@ function getProductStatus(stock: number, minStock: number) {
 }
 
 export default function ProductsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<ProductWithCategory[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
+  const [productSearch, setProductSearch] = useState(searchParams.get("search") ?? "");
   const [feedback, setFeedback] = useState("");
   const [savedProduct, setSavedProduct] = useState<ProductWithCategory | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ProductWithCategory | null>(null);
+  const SEARCH_DEBOUNCE_MS = 1000;
+
+  useEffect(() => {
+    setProductSearch(searchParams.get("search") ?? "");
+  }, [searchParams]);
 
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -35,8 +47,35 @@ export default function ProductsPage() {
     minStock: "",
   });
 
+  const resetProductForm = () => {
+    setNewProduct({ name: "", categoryId: "", price: "", stock: "", minStock: "" });
+    setCategorySearch("");
+  };
+
+  const getProductFormValues = (product: ProductWithCategory) => ({
+    name: product.name,
+    categoryId: product.category_id || product.product_categories?.id || "",
+    price: String(product.price),
+    stock: String(product.stock),
+    minStock: String(product.min_stock),
+  });
+
+  const openCreateProductModal = () => {
+    resetProductForm();
+    setIsAddModalOpen(true);
+  };
+
+  const openEditProductModal = (product: ProductWithCategory) => {
+    setEditingProduct(product);
+    setNewProduct(getProductFormValues(product));
+    setCategorySearch("");
+    setIsEditModalOpen(true);
+  };
+
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true);
+
       const { data: catData } = await supabase
         .from("product_categories")
         .select("*")
@@ -44,18 +83,25 @@ export default function ProductsPage() {
       setCategories(catData ?? []);
 
       const businessId = await getCurrentBusinessId();
-      if (!businessId) return;
+      if (!businessId) {
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
 
       const { data } = await supabase
         .from("products")
         .select("*, product_categories(*)")
-        .eq("business_id", businessId);
+        .eq("business_id", businessId)
+        .order("created_at", { ascending: false });
+
       const rows = (data ?? []) as (Product & { product_categories: ProductCategory })[];
+
       setProducts(rows.map((p) => ({ ...p, status: getProductStatus(p.stock, p.min_stock) })));
       setLoading(false);
     };
     loadData();
-  }, []);
+  }, [searchParams]);
 
   const handleSaveProduct = async () => {
     const businessId = await getCurrentBusinessId();
@@ -65,12 +111,17 @@ export default function ProductsPage() {
     }
 
     const validated = {
-      name: newProduct.name || "Produk Baru",
-      categoryId: newProduct.categoryId || categories[0]?.id,
-      price: parseInt(newProduct.price) || 0,
-      stock: parseInt(newProduct.stock) || 0,
-      minStock: parseInt(newProduct.minStock) || 0,
+      name: newProduct.name.trim() || "Produk Baru",
+      categoryId: newProduct.categoryId || categories[0]?.id || "",
+      price: Number(newProduct.price) || 0,
+      stock: Number(newProduct.stock) || 0,
+      minStock: Number(newProduct.minStock) || 0,
     };
+
+    if (!validated.categoryId) {
+      setFeedback("Pilih kategori produk terlebih dahulu.");
+      return;
+    }
 
     const { data, error } = await supabase
       .from("products")
@@ -97,31 +148,99 @@ export default function ProductsPage() {
       status: getProductStatus(data.stock, data.min_stock),
     };
 
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData.user) {
+      await ensureProductLowStockNotification(
+        {
+          id: data.id,
+          name: data.name,
+          stock: data.stock,
+          min_stock: data.min_stock,
+          business_id: businessId,
+        },
+        authData.user.id
+      );
+    }
+
     setProducts((prev) => [saved, ...prev]);
     setSavedProduct(saved);
     setIsAddModalOpen(false);
     setIsQRModalOpen(true);
-    setCategorySearch("");
-    setNewProduct({ name: "", categoryId: "", price: "", stock: "", minStock: "" });
+    resetProductForm();
     setFeedback("Produk berhasil ditambahkan.");
   };
 
-  const handleEditProduct = async (product: ProductWithCategory) => {
-    const updatedStatus = getProductStatus(product.stock, product.min_stock);
+  const handleEditProduct = async () => {
+    if (!editingProduct) return;
+
+    const businessId = await getCurrentBusinessId();
+    if (!businessId) {
+      setFeedback("Bisnis tidak ditemukan. Perbarui profil bisnis Anda terlebih dahulu.");
+      return;
+    }
+
+    const validated = {
+      name: newProduct.name.trim() || editingProduct.name,
+      categoryId: newProduct.categoryId || editingProduct.category_id || categories[0]?.id || "",
+      price: Number(newProduct.price) || editingProduct.price,
+      stock: Number(newProduct.stock) || editingProduct.stock,
+      minStock: Number(newProduct.minStock) || editingProduct.min_stock,
+    };
+
+    if (!validated.categoryId) {
+      setFeedback("Pilih kategori produk terlebih dahulu.");
+      return;
+    }
+
     const { error } = await supabase
       .from("products")
-      .update({ stock: product.stock, min_stock: product.min_stock })
-      .eq("id", product.id);
+      .update({
+        name: validated.name,
+        category_id: validated.categoryId,
+        price: validated.price,
+        stock: validated.stock,
+        min_stock: validated.minStock,
+      })
+      .eq("id", editingProduct.id);
 
     if (error) {
       setFeedback(`Gagal update: ${error.message}`);
       return;
     }
 
+    const category = categories.find((c) => c.id === validated.categoryId) ?? editingProduct.product_categories;
+    const updatedProduct: ProductWithCategory = {
+      ...editingProduct,
+      name: validated.name,
+      category_id: validated.categoryId,
+      price: validated.price,
+      stock: validated.stock,
+      min_stock: validated.minStock,
+      product_categories: category,
+      status: getProductStatus(validated.stock, validated.minStock),
+    };
+
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData.user) {
+      await ensureProductLowStockNotification(
+        {
+          id: editingProduct.id,
+          name: validated.name,
+          stock: validated.stock,
+          min_stock: validated.minStock,
+          business_id: businessId,
+        },
+        authData.user.id
+      );
+    }
+
     setProducts((prev) =>
-      prev.map((p) => (p.id === product.id ? { ...p, status: updatedStatus } : p))
+      prev.map((p) => (p.id === editingProduct.id ? updatedProduct : p))
     );
-    setFeedback("Produk diperbarui.");
+    setIsEditModalOpen(false);
+    setEditingProduct(null);
+    resetProductForm();
+    setFeedback("Produk berhasil diperbarui.");
   };
 
   const columns = [
@@ -144,7 +263,7 @@ export default function ProductsPage() {
       key: "actions",
       header: "Aksi",
       render: (item: ProductWithCategory) => (
-        <Button variant="ghost" size="sm" className="text-primary font-semibold" onClick={() => handleEditProduct(item)}>
+        <Button variant="ghost" size="sm" className="text-primary font-semibold" onClick={() => openEditProductModal(item)}>
           Edit
         </Button>
       )
@@ -155,6 +274,49 @@ export default function ProductsPage() {
     c.name.toLowerCase().includes(categorySearch.toLowerCase())
   );
 
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (productSearch.trim()) {
+        params.set("search", productSearch.trim());
+      } else {
+        params.delete("search");
+      }
+
+      const nextUrl = params.toString() ? `/products?${params.toString()}` : "/products";
+      const currentValue = searchParams.get("search") ?? "";
+
+      if (currentValue !== productSearch.trim()) {
+        router.replace(nextUrl);
+      }
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [productSearch, router, searchParams]);
+
+  const handleProductSearch = (value: string) => {
+    setProductSearch(value);
+  };
+
+  const getProductSearchValue = (product: ProductWithCategory) => {
+    return [
+      shortId(product.id),
+      product.name,
+      product.product_categories?.name ?? "",
+      Number(product.price).toString(),
+      String(product.stock),
+      String(product.min_stock),
+      product.status,
+    ].join(" ").toLowerCase();
+  };
+
+  const visibleProducts = products.filter((product) => {
+    const term = productSearch.trim().toLowerCase();
+    if (!term) return true;
+    return getProductSearchValue(product).includes(term);
+  });
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -162,7 +324,7 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-bold">Produk</h1>
           <p className="text-muted text-sm mt-1">Kelola data produk Anda di sini.</p>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)}>
+        <Button onClick={openCreateProductModal}>
           <Plus className="h-4 w-4 mr-2" /> Tambah Produk
         </Button>
       </div>
@@ -170,9 +332,13 @@ export default function ProductsPage() {
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted" />
-          <Input placeholder="Cari produk..." className="pl-10" />
+          <Input
+            placeholder="Cari produk..."
+            className="pl-10"
+            value={productSearch}
+            onChange={(event) => handleProductSearch(event.target.value)}
+          />
         </div>
-        <Button variant="outline"><Filter className="h-4 w-4 mr-2" /> Filter</Button>
       </div>
 
       {feedback && <p className="text-sm text-success" role="status">{feedback}</p>}
@@ -180,17 +346,113 @@ export default function ProductsPage() {
       {loading ? (
         <p className="text-muted text-sm">Memuat produk...</p>
       ) : (
-        <DataTable data={products} columns={columns} />
+        <DataTable data={visibleProducts} columns={columns} />
       )}
 
       <Modal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          resetProductForm();
+        }}
         title="Tambah Produk Baru"
         footer={
           <>
-            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>Batal</Button>
+            <Button variant="outline" onClick={() => {
+              setIsAddModalOpen(false);
+              resetProductForm();
+            }}>Batal</Button>
             <Button onClick={handleSaveProduct}>Simpan Produk</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Nama Produk</label>
+            <Input
+              placeholder="e.g. Kopi Vanilla"
+              value={newProduct.name}
+              onChange={e => setNewProduct({ ...newProduct, name: e.target.value })}
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Harga</label>
+              <Input
+                type="number"
+                placeholder="20000"
+                value={newProduct.price}
+                onChange={e => setNewProduct({ ...newProduct, price: e.target.value })}
+              />
+            </div>
+            <div className="min-w-0">
+              <label className="block text-sm font-medium mb-1">Kategori</label>
+              <Input
+                placeholder="Cari kategori..."
+                value={categorySearch}
+                onChange={e => setCategorySearch(e.target.value)}
+                aria-label="Cari kategori"
+              />
+              <div className="mt-2 max-h-48 overflow-y-auto rounded-md border border-gray-200" role="listbox" aria-label="Daftar kategori">
+                <div className="flex flex-col">
+                  {filteredCategories.map((category) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      role="option"
+                      aria-selected={newProduct.categoryId === category.id}
+                      onClick={() => setNewProduct({ ...newProduct, categoryId: category.id })}
+                      className={`w-full px-4 py-3 text-sm font-medium text-left transition-colors border-b last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${newProduct.categoryId === category.id ? "bg-primary/10 text-primary border-primary" : "hover:bg-gray-50 border-gray-200"}`}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+                {filteredCategories.length === 0 && (
+                  <p className="px-2 py-3 text-center text-sm text-muted">Kategori tidak ditemukan.</p>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Stok Saat Ini</label>
+              <Input
+                type="number"
+                placeholder="50"
+                value={newProduct.stock}
+                onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Stok Minimum</label>
+              <Input
+                type="number"
+                placeholder="10"
+                value={newProduct.minStock}
+                onChange={e => setNewProduct({ ...newProduct, minStock: e.target.value })}
+              />
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingProduct(null);
+          resetProductForm();
+        }}
+        title="Edit Produk"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => {
+              setIsEditModalOpen(false);
+              setEditingProduct(null);
+              resetProductForm();
+            }}>Batal</Button>
+            <Button onClick={handleEditProduct}>Simpan Perubahan</Button>
           </>
         }
       >

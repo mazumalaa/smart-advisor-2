@@ -11,6 +11,13 @@ import { Plus, Search, Filter } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { Modal } from "@/components/ui/modal";
+import {
+  createPaymentNotification,
+  createSystemNotification,
+  createTransactionNotification,
+  ensureProductLowStockNotification,
+  ensureSalesTrendNotification,
+} from "@/lib/notifications";
 
 interface TransactionRow extends Transaction {
   transaction_items: (TransactionItem & { products: Product })[];
@@ -23,6 +30,8 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [isStockAlertOpen, setIsStockAlertOpen] = useState(false);
+  const [stockAlertMessage, setStockAlertMessage] = useState("");
   const [newTrx, setNewTrx] = useState({
     productId: "",
     productCount: "",
@@ -83,7 +92,19 @@ export default function TransactionsPage() {
       return;
     }
 
-    const quantity = parseInt(newTrx.productCount) || 1;
+    const quantity = parseInt(newTrx.productCount) || 0;
+    if (quantity <= 0) {
+      setStockAlertMessage("Jumlah item harus lebih dari 0.");
+      setIsStockAlertOpen(true);
+      return;
+    }
+
+    if (quantity > product.stock) {
+      setStockAlertMessage(`Stok ${product.name} tidak cukup. Tersedia ${product.stock} unit, Anda mencoba menjual ${quantity} unit.`);
+      setIsStockAlertOpen(true);
+      return;
+    }
+
     const total = product.price * quantity;
 
     const { data: trx, error } = await supabase
@@ -116,10 +137,16 @@ export default function TransactionsPage() {
       return;
     }
 
-    await supabase
+    const updatedStock = Math.max(0, product.stock - quantity);
+    const { error: stockUpdateError } = await supabase
       .from("products")
-      .update({ stock: Math.max(0, product.stock - quantity) })
+      .update({ stock: updatedStock })
       .eq("id", product.id);
+
+    if (stockUpdateError) {
+      setFeedback(`Gagal update stok: ${stockUpdateError.message}`);
+      return;
+    }
 
     await supabase.from("inventory_history").insert({
       business_id: businessId,
@@ -128,6 +155,44 @@ export default function TransactionsPage() {
       quantity_changed: -quantity,
       notes: `Penjualan ${product.name}`,
     });
+
+    await createTransactionNotification(
+      businessId,
+      user.id,
+      trx.id,
+      total,
+      newTrx.payment,
+      product.name
+    );
+
+    await createPaymentNotification(
+      businessId,
+      user.id,
+      newTrx.payment,
+      total,
+      "success"
+    );
+
+    await createSystemNotification(
+      businessId,
+      user.id,
+      "Sistem transaksi diperbarui",
+      `Transaksi ${trx.id.slice(0, 8).toUpperCase()} untuk ${product.name} berhasil dicatat dan stok otomatis diperbarui.`,
+      "medium"
+    );
+
+    await ensureProductLowStockNotification(
+      {
+        id: product.id,
+        name: product.name,
+        stock: updatedStock,
+        min_stock: product.min_stock,
+        business_id: businessId,
+      },
+      user.id
+    );
+
+    await ensureSalesTrendNotification(businessId, user.id);
 
     setTransactions((prev) => [
       {
@@ -258,6 +323,20 @@ export default function TransactionsPage() {
               <option value="Kartu Debit">Kartu Debit</option>
             </select>
           </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isStockAlertOpen}
+        onClose={() => setIsStockAlertOpen(false)}
+        title="Stok Tidak Cukup"
+        footer={
+          <Button onClick={() => setIsStockAlertOpen(false)}>OK</Button>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-muted">{stockAlertMessage}</p>
+          <p className="text-sm text-muted">Silakan kurangi jumlah item atau tambah stok produk terlebih dahulu.</p>
         </div>
       </Modal>
     </div>

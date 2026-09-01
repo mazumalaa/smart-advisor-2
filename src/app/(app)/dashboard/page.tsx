@@ -17,6 +17,38 @@ interface TrendPoint {
   revenue: number;
 }
 
+function buildTrendData(rows: (Transaction & { transaction_items: (TransactionItem & { products: { name: string } })[] })[], range: 7 | 30 | 90): TrendPoint[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return Array.from({ length: range }, (_, index) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - (range - 1 - index));
+
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    const end = start + 86400000;
+
+    const revenue = rows
+      .filter((t) => {
+        const ts = new Date(t.created_at).getTime();
+        return ts >= start && ts < end;
+      })
+      .reduce((acc, t) => acc + Number(t.total_amount), 0);
+
+    const label =
+      range === 7
+        ? DAY_NAMES[date.getDay()]
+        : range === 30
+          ? `${date.getDate()}`
+          : `${date.toLocaleDateString("id-ID", { month: "short" })} ${date.getDate()}`;
+
+    return {
+      day: label,
+      revenue,
+    };
+  });
+}
+
 interface TopProduct {
   name: string;
   sold: number;
@@ -35,6 +67,7 @@ export default function DashboardPage() {
   });
   const [trend, setTrend] = useState<TrendPoint[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [selectedRange, setSelectedRange] = useState<7 | 30 | 90>(7);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -82,23 +115,7 @@ export default function DashboardPage() {
         aov: rows.length > 0 ? totalRevenue / rows.length : 0,
       });
 
-      const today = new Date();
-      const days = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(today);
-        d.setDate(today.getDate() - (6 - i));
-        const start = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-        const end = start + 86400000;
-        return {
-          day: DAY_NAMES[d.getDay()],
-          revenue: rows
-            .filter((t) => {
-              const ts = new Date(t.created_at).getTime();
-              return ts >= start && ts < end;
-            })
-            .reduce((acc, t) => acc + Number(t.total_amount), 0),
-        };
-      });
-      setTrend(days);
+      setTrend(buildTrendData(rows, selectedRange));
 
       const productMap = new Map<string, TopProduct>();
       rows.forEach((t) => {
@@ -114,7 +131,19 @@ export default function DashboardPage() {
       setLoading(false);
     };
     load();
-  }, [router]);
+  }, [router, selectedRange]);
+
+  useEffect(() => {
+    if (!loading) {
+      const prevTrend = buildTrendData(
+        ([] as (Transaction & { transaction_items: (TransactionItem & { products: { name: string } })[] })[]),
+        selectedRange
+      );
+      if (prevTrend.length > 0) {
+        setTrend(prevTrend);
+      }
+    }
+  }, [selectedRange, loading]);
 
   const aiSummary =
     stats.totalTransactions > 0
@@ -135,11 +164,14 @@ export default function DashboardPage() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Selamat datang kembali, {owner.split(" ")[0]} 👋</h1>
+          <h1 className="text-2xl font-bold">Selamat datang kembali, {owner.split(" ")[0]}</h1>
           <p className="text-muted mt-1">Berikut ringkasan performa {businessName}.</p>
         </div>
         <div className="w-32">
-          <Select defaultValue="7">
+          <Select
+            value={String(selectedRange)}
+            onChange={(e) => setSelectedRange(Number(e.target.value) as 7 | 30 | 90)}
+          >
             <option value="7">7 Hari</option>
             <option value="30">30 Hari</option>
             <option value="90">3 Bulan</option>
@@ -158,7 +190,9 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Performa Penjualan</CardTitle>
-            <p className="text-sm text-muted">7 hari terakhir</p>
+            <p className="text-sm text-muted">
+              {selectedRange === 7 ? "7 hari terakhir" : selectedRange === 30 ? "30 hari terakhir" : "3 bulan terakhir"}
+            </p>
           </CardHeader>
           <CardContent>
             <SimpleLineChart data={trend} dataKey="revenue" seriesName="Pendapatan" />
