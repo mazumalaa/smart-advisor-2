@@ -7,10 +7,11 @@ import { cn } from "@/lib/utils"
 
 export function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState<{role: 'user' | 'ai', content: React.ReactNode}[]>([
-    { role: 'ai', content: "Halo, Andi! Saya UMKM Smart Advisor Anda. Ada yang bisa saya bantu terkait performa Kopi Senja hari ini?" }
+  const [messages, setMessages] = useState<{role: 'user' | 'ai', content: string}[]>([
+    { role: 'ai', content: "Halo! Saya UMKM Smart Advisor Anda. Tanya apapun tentang bisnis Anda - penjualan, inventory, atau rekomendasi strategis. 🚀" }
   ])
   const [isTyping, setIsTyping] = useState(false)
+  const [error, setError] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -21,50 +22,36 @@ export function AIAssistant() {
 
   const suggestedPrompts = [
     "Produk apa yang paling laku?",
-    "Apakah saya perlu restock Kopi Susu?",
+    "Kapan saya perlu restock?",
     "Bagaimana tren penjualan minggu ini?"
   ]
 
-  const handleSend = (text: string) => {
+  const handleSend = async (text: string) => {
     if (!text.trim()) return
     
+    setError("")
     setMessages(prev => [...prev, { role: 'user', content: text }])
     setIsTyping(true)
 
-    setTimeout(() => {
-      setIsTyping(false)
-      
-      let aiResponse: React.ReactNode = "Maaf, saya tidak mengerti. Bisa ditanyakan dengan cara lain?"
-      
-      const lower = text.toLowerCase();
-      if (lower.includes("restock") || lower.includes("kopi susu")) {
-        aiResponse = (
-          <div className="space-y-3">
-            <p>Berdasarkan histori penjualan 30 hari terakhir dan prediksi 7 hari ke depan, permintaan Kopi Susu diperkirakan meningkat 18%.</p>
-            <div className="bg-surface border border-gray-100 p-3 rounded-lg text-sm grid grid-cols-2 gap-2">
-              <div>
-                <p className="text-muted text-xs">Stok saat ini</p>
-                <p className="font-bold text-foreground">12 unit</p>
-              </div>
-              <div>
-                <p className="text-muted text-xs">Estimasi kebutuhan</p>
-                <p className="font-bold text-foreground">35 unit</p>
-              </div>
-            </div>
-            <div className="bg-primary/10 text-primary border border-primary/20 p-3 rounded-lg text-sm font-semibold flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              Rekomendasi: Tambah sekitar 25 unit
-            </div>
-          </div>
-        )
-      } else if (lower.includes("paling laku")) {
-        aiResponse = "Produk paling laku adalah Kopi Susu dengan 428 unit terjual (menghasilkan Rp 8.560.000) dalam 30 hari terakhir."
-      } else if (lower.includes("tren penjualan")) {
-        aiResponse = "Tren penjualan Anda sangat positif! Pendapatan naik 12.8% dibanding bulan lalu, didorong oleh peningkatan pesat di akhir pekan."
+    try {
+      const response = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to get AI response")
       }
 
-      setMessages(prev => [...prev, { role: 'ai', content: aiResponse }])
-    }, 1000)
+      const data = await response.json()
+      setMessages(prev => [...prev, { role: 'ai', content: data.message }])
+    } catch (err) {
+      setError("Gagal terhubung ke AI. Coba lagi nanti.")
+      console.error(err)
+    } finally {
+      setIsTyping(false)
+    }
   }
 
   return (
@@ -85,7 +72,7 @@ export function AIAssistant() {
               </div>
               <div>
                 <h3 className="font-bold text-sm">UMKM AI Assistant</h3>
-                <p className="text-[10px] text-muted">Business intelligence advisor</p>
+                <p className="text-[10px] text-muted">Powered by Telkom LLM</p>
               </div>
             </div>
             <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
@@ -117,6 +104,13 @@ export function AIAssistant() {
                 </div>
               </div>
             )}
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
 
@@ -126,7 +120,8 @@ export function AIAssistant() {
                 <button 
                   key={prompt} 
                   onClick={() => handleSend(prompt)}
-                  className="text-[10px] bg-blue-50 text-primary border border-blue-100 px-2.5 py-1.5 rounded-full hover:bg-blue-100 transition-colors text-left font-medium"
+                  disabled={isTyping}
+                  className="text-[10px] bg-blue-50 text-primary border border-blue-100 px-2.5 py-1.5 rounded-full hover:bg-blue-100 transition-colors text-left font-medium disabled:opacity-50"
                 >
                   {prompt}
                 </button>
@@ -146,9 +141,10 @@ export function AIAssistant() {
                 name="message"
                 type="text" 
                 placeholder="Tanya AI tentang bisnismu..." 
-                className="flex-1 h-10 px-3 text-sm rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 bg-gray-50"
+                disabled={isTyping}
+                className="flex-1 h-10 px-3 text-sm rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 bg-gray-50 disabled:opacity-50"
               />
-              <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0 shadow-sm">
+              <Button type="submit" size="icon" disabled={isTyping} className="rounded-full h-10 w-10 shrink-0 shadow-sm">
                 <Send className="h-4 w-4 ml-0.5" />
               </Button>
             </form>

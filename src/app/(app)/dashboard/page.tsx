@@ -8,6 +8,7 @@ import { AIInsightCard } from "@/components/dashboard/ai-insight-card";
 import { SimpleLineChart } from "@/components/charts/base-charts";
 import { Select } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { AIAssistant } from "@/components/ai/ai-assistant";
 import type { Transaction, TransactionItem } from "@/lib/types";
 
 const DAY_NAMES = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
@@ -191,6 +192,8 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
+
+      <AIAssistant />
     </div>
   );
 }
