@@ -1,0 +1,164 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "LLM Telkom AI",
+    "description": "### LLM Telkom AI API Documentation\n\n#### Overview\n\nThis API provides access to the `telkom-ai` model for chat completions. The API allows developers to interact with the model by sending a series of messages and receiving model-generated responses. It supports both single-response and stream-based outputs, enabling a flexible integration of LLM functionality into applications.\nThis large language model was trained on data that predates June 2024.\n### Authentication\n\nTo use the API, you need to authenticate with your API key. The API key should be passed either as a request header (`x-api-key`) or set programmatically.\n\n---\n\n### API Endpoints\n\n**POST** `/chat/completions`\n\n- **Description**: This endpoint is used to generate completions based on a series of messages. It can either return a single response or stream responses in chunks.\n\n- **Request Format**:\n  - **Headers**:\n    - `Content-Type: application/json`\n    - `x-api-key: API_KEY` (replace `API_KEY` with your actual API key)\n\n  - **Request Body**: A JSON object containing the `model` to use, an array of `messages` exchanged with the model, and optionally a `stream` parameter for streaming responses.\n\n---\n\n### Example Code\n\n#### Python Example\n\n```python\nimport openai\n\n# Set your API key for authentication\nopenai.api_key = \"blaablaa\"\n\n# Configure client options (if needed)\nopenai.base_url = \"https://ini_url.com/\"  # Custom base URL\nopenai.default_headers = {\"x-api-key\": \"API_KEY\"}  # Set your API key here\n\n# Make a request to generate chat completion\ncompletion = openai.chat.completions.create(\n    model=\"telkom-ai-instruct\",  # Specify the model to use\n    messages=[\n        {\n            \"role\": \"user\",  # User's message\n            \"content\": \"How do I output all files in a directory using Python?\",\n        },\n    ],\n    stream=True,  # Enable streaming if required\n)\n\n# Print the response content (non-streaming example)\nprint(completion.choices[0].message.content)\n\n# If streaming, print the chunks\n# for chunk in completion:\n#     print(chunk.choices[0].delta.content or \"\", end=\"\")\n```\n\n#### cURL Example\n\n```bash\ncurl \"https://ini_url.com/chat/completions\"     -H \"Content-Type: application/json\"     -H 'x-api-key: API_KEY'     -d '{\n        \"model\": \"telkom-ai-instruct\",  # Specify the model to use\n        \"messages\": [\n            {\n                \"role\": \"system\",  # System's message setting up context\n                \"content\": \"You are a helpful assistant.\"\n            },\n            {\n                \"role\": \"user\",  # User's message\n                \"content\": \"Write a haiku that explains the concept of recursion.\"\n            }\n        ]\n    }'\n```\n\n---\n\n### Request Parameters\n\n- **model** (string): The model to use (e.g., `telkom-ai-instruct`).\n- **messages** (array): A list of message objects to pass to the model. Each message should have:\n  - **role** (string): The role of the sender (either `system`, `user`, or `assistant`).\n  - **content** (string): The text content of the message.\n\n- **stream** (boolean, optional): If `true`, the response will be streamed as chunks. If `false` or omitted, a single response will be returned.\n\n---\n",
+    "version": "0.0.2"
+  },
+  "paths": {
+    "/llm/chat/completions": {
+      "post": {
+        "tags": [
+          "endpoint"
+        ],
+        "summary": "Chat Completions",
+        "operationId": "chat_completions_v1_llm_chat_completions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ChatRequest": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "default": "telkom-ai"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            },
+            "type": "array",
+            "title": "Messages"
+          },
+          "max_tokens": {
+            "type": "integer",
+            "title": "Max Tokens",
+            "default": 1000
+          },
+          "temperature": {
+            "type": "number",
+            "title": "Temperature",
+            "default": 0
+          },
+          "stream": {
+            "type": "boolean",
+            "title": "Stream",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "ChatRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Message": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "default": "user"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "default": "Hello, Good Morning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "Message"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    }
+  }
+}

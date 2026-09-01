@@ -1,1 +1,0 @@
-create ERD for this Web aplication for backend to visualize it to supabase
