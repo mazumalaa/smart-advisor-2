@@ -9,8 +9,9 @@ import { Printer, Download } from "@/components/ui/icons";
 export function encodeProductQr(product: ProductWithCategory): string {
   return JSON.stringify({
     t: "p",
-    v: 1,
+    v: 2,
     id: product.id,
+    b: product.business_id,
     n: product.name,
     p: Number(product.price),
     c: product.product_categories?.name ?? "",

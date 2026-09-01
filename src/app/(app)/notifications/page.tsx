@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabaseClient"
 import { Bell, CheckCheck, Clock3, Inbox, Trash2 } from "@/components/ui/icons"
+import { getCurrentBusinessId } from "@/lib/business"
 import type { Notification } from "@/lib/types"
 
 const categoryLabels = {
@@ -27,21 +28,28 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: authData }) => {
+    const load = async () => {
+      const { data: authData } = await supabase.auth.getUser()
       if (!authData.user) {
         router.push("/login")
+        return
+      }
+      const businessId = await getCurrentBusinessId()
+      if (!businessId) {
+        setLoading(false)
         return
       }
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
-        .eq("user_id", authData.user.id)
+        .eq("business_id", businessId)
         .order("created_at", { ascending: false })
       if (!error) {
         setItems((data ?? []) as Notification[])
       }
       setLoading(false)
-    })
+    }
+    load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

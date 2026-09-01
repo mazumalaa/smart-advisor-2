@@ -193,10 +193,16 @@ CREATE POLICY "Users manage own business" ON businesses
 CREATE POLICY "Users manage own products" ON products
   FOR ALL USING (
     business_id IN (SELECT id FROM businesses WHERE created_by = auth.uid())
+  )
+  WITH CHECK (
+    business_id IN (SELECT id FROM businesses WHERE created_by = auth.uid())
   );
 
 CREATE POLICY "Users manage own transactions" ON transactions
   FOR ALL USING (
+    business_id IN (SELECT id FROM businesses WHERE created_by = auth.uid())
+  )
+  WITH CHECK (
     business_id IN (SELECT id FROM businesses WHERE created_by = auth.uid())
   );
 
@@ -207,15 +213,28 @@ CREATE POLICY "Users manage own transaction_items" ON transaction_items
       JOIN businesses b ON t.business_id = b.id
       WHERE b.created_by = auth.uid()
     )
+  )
+  WITH CHECK (
+    transaction_id IN (
+      SELECT t.id FROM transactions t
+      JOIN businesses b ON t.business_id = b.id
+      WHERE b.created_by = auth.uid()
+    )
   );
 
 CREATE POLICY "Users manage own inventory_history" ON inventory_history
   FOR ALL USING (
     business_id IN (SELECT id FROM businesses WHERE created_by = auth.uid())
+  )
+  WITH CHECK (
+    business_id IN (SELECT id FROM businesses WHERE created_by = auth.uid())
   );
 
 CREATE POLICY "Users manage own notifications" ON notifications
   FOR ALL USING (
+    business_id IN (SELECT id FROM businesses WHERE created_by = auth.uid())
+  )
+  WITH CHECK (
     business_id IN (SELECT id FROM businesses WHERE created_by = auth.uid())
   );
 
