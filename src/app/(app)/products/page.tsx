@@ -1,9 +1,9 @@
 "use client"
 import { useEffect, useState } from "react";
-import { QRCodeCanvas } from "qrcode.react";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentBusinessId } from "@/lib/business";
 import type { Product, ProductCategory, ProductWithCategory } from "@/lib/types";
+import ProductQrModal from "@/components/products/product-qr-modal";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -265,35 +265,7 @@ export default function ProductsPage() {
         </div>
       </Modal>
 
-      <Modal
-        isOpen={isQRModalOpen}
-        onClose={() => setIsQRModalOpen(false)}
-        title="Produk Berhasil Ditambahkan"
-        footer={
-          <Button onClick={() => setIsQRModalOpen(false)}>Tutup</Button>
-        }
-      >
-        <div className="flex flex-col items-center gap-6">
-          <div className="bg-white p-4 rounded-lg border border-gray-200">
-            {savedProduct && (
-              <QRCodeCanvas
-                value={JSON.stringify({
-                  id: savedProduct.id,
-                  name: savedProduct.name,
-                })}
-                size={200}
-              />
-            )}
-          </div>
-          <div className="w-full space-y-2 text-center">
-            <h3 className="font-semibold text-lg">{savedProduct?.name}</h3>
-            <p className="text-sm text-muted">ID: {savedProduct?.id}</p>
-            <p className="text-sm text-muted">Kategori: {savedProduct?.product_categories?.name}</p>
-            <p className="text-sm font-medium">Harga: Rp {Number(savedProduct?.price ?? 0).toLocaleString('id-ID')}</p>
-            <p className="text-sm text-muted">Stok: {savedProduct?.stock} unit</p>
-          </div>
-        </div>
-      </Modal>
+      <ProductQrModal product={savedProduct} open={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} />
     </div>
   )
 }

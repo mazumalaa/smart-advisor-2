@@ -111,6 +111,41 @@ body {
   position: relative;
 }
 
+/* ----------------------------------------------------------
+   Cetak label QR produk.
+   Pendekatan robust berbasis `visibility` (bukan `display: none`)
+   agar layout halaman tetap dipertahankan saat print, lalu area
+   label QR diposisikan di atasnya (top-left halaman). Ini
+   memastikan hanya #qr-print-area yang tercetak, bebas dari
+   sidebar/nav/daftar produk, dan berlatarbelakang putih.
+   ---------------------------------------------------------- */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #qr-print-area,
+  #qr-print-area * {
+    visibility: visible;
+  }
+  #qr-print-area {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
 #app-custom-background {
   position: fixed;
   inset: 0;

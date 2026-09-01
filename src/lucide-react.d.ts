@@ -20,6 +20,7 @@ declare module "lucide-react" {
   export const CheckCircle2: LucideIcon;
   export const ChevronDown: LucideIcon;
   export const Clock3: LucideIcon;
+  export const Download: LucideIcon;
   export const Eye: LucideIcon;
   export const Filter: LucideIcon;
   export const Inbox: LucideIcon;
@@ -33,6 +34,7 @@ declare module "lucide-react" {
   export const Pencil: LucideIcon;
   export const Phone: LucideIcon;
   export const Plus: LucideIcon;
+  export const Printer: LucideIcon;
   export const Receipt: LucideIcon;
   export const RotateCcw: LucideIcon;
   export const Save: LucideIcon;
