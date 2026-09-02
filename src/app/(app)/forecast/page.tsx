@@ -132,7 +132,7 @@ export default function ForecastPage() {
 
       <Card className="bg-primary text-white border-0">
         <CardContent className="p-8">
-          <h2 className="text-3xl font-bold mb-2">{summaryMessage}</h2>
+          <h2 className="text-3xl font-bold mb-2">📈 {summaryMessage}</h2>
           <p className="text-primary-foreground/80 text-lg">
             Perkiraan sederhana dihitung dari rata-rata penjualan harian produk Anda.
           </p>

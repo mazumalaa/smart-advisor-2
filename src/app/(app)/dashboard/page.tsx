@@ -134,18 +134,6 @@ export default function DashboardPage() {
     load();
   }, [router, selectedRange]);
 
-  useEffect(() => {
-    if (!loading) {
-      const prevTrend = buildTrendData(
-        ([] as (Transaction & { transaction_items: (TransactionItem & { products: { name: string } })[] })[]),
-        selectedRange
-      );
-      if (prevTrend.length > 0) {
-        setTrend(prevTrend);
-      }
-    }
-  }, [selectedRange, loading]);
-
   const aiSummary =
     stats.totalTransactions > 0
       ? `Bisnis Anda mencatat ${stats.totalTransactions} transaksi dengan total pendapatan Rp ${stats.revenue.toLocaleString(
@@ -165,7 +153,7 @@ export default function DashboardPage() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Selamat datang kembali, {owner.split(" ")[0]}</h1>
+          <h1 className="text-2xl font-bold">Selamat datang kembali, {owner.split(" ")[0]} 👋</h1>
           <p className="text-muted mt-1">Berikut ringkasan performa {businessName}.</p>
         </div>
         <div className="w-32">

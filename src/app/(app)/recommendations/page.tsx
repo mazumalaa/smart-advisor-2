@@ -159,5 +159,5 @@ export default function RecommendationsPage() {
 
       {/* TODO: Simpan rekomendasi AI ke tabel ai_recommendations jika dibutuhkan persistensi */}
     </div>
-  )
+  );
 }

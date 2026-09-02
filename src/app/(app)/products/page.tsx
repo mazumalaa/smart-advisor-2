@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { QRCodeCanvas } from "qrcode.react";
 import { supabase } from "@/lib/supabaseClient";
@@ -8,7 +8,7 @@ import type { Product, ProductCategory, ProductWithCategory } from "@/lib/types"
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Filter } from "@/components/ui/icons";
+import { Plus, Search, Eye } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { ensureProductLowStockNotification } from "@/lib/notifications";
@@ -17,6 +17,22 @@ function getProductStatus(stock: number, minStock: number) {
   if (stock <= 0) return "Out of Stock" as const;
   if (stock <= minStock) return "Low Stock" as const;
   return "Available" as const;
+}
+
+function encodeProductQr(product: ProductWithCategory): string {
+  return JSON.stringify({
+    t: "p",
+    v: 2,
+    id: product.id,
+    b: product.business_id,
+    n: product.name,
+    p: Number(product.price),
+    c: product.product_categories?.name ?? "",
+  });
+}
+
+function shortId(id: string) {
+  return id.slice(0, 8).toUpperCase();
 }
 
 export default function ProductsPage() {
@@ -32,12 +48,9 @@ export default function ProductsPage() {
   const [productSearch, setProductSearch] = useState(searchParams.get("search") ?? "");
   const [feedback, setFeedback] = useState("");
   const [savedProduct, setSavedProduct] = useState<ProductWithCategory | null>(null);
+  const [activeQrProduct, setActiveQrProduct] = useState<ProductWithCategory | null>(null);
   const [editingProduct, setEditingProduct] = useState<ProductWithCategory | null>(null);
   const SEARCH_DEBOUNCE_MS = 1000;
-
-  useEffect(() => {
-    setProductSearch(searchParams.get("search") ?? "");
-  }, [searchParams]);
 
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -46,6 +59,10 @@ export default function ProductsPage() {
     stock: "",
     minStock: "",
   });
+
+  useEffect(() => {
+    setProductSearch(searchParams.get("search") ?? "");
+  }, [searchParams]);
 
   const resetProductForm = () => {
     setNewProduct({ name: "", categoryId: "", price: "", stock: "", minStock: "" });
@@ -72,10 +89,21 @@ export default function ProductsPage() {
     setIsEditModalOpen(true);
   };
 
+  const handleViewQr = (product: ProductWithCategory) => {
+    setSavedProduct(null);
+    setActiveQrProduct(product);
+    setIsQRModalOpen(true);
+  };
+
+  const handleCloseQrModal = () => {
+    setIsQRModalOpen(false);
+    setActiveQrProduct(null);
+    setSavedProduct(null);
+  };
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-
       const { data: catData } = await supabase
         .from("product_categories")
         .select("*")
@@ -96,7 +124,6 @@ export default function ProductsPage() {
         .order("created_at", { ascending: false });
 
       const rows = (data ?? []) as (Product & { product_categories: ProductCategory })[];
-
       setProducts(rows.map((p) => ({ ...p, status: getProductStatus(p.stock, p.min_stock) })));
       setLoading(false);
     };
@@ -164,6 +191,7 @@ export default function ProductsPage() {
 
     setProducts((prev) => [saved, ...prev]);
     setSavedProduct(saved);
+    setActiveQrProduct(null);
     setIsAddModalOpen(false);
     setIsQRModalOpen(true);
     resetProductForm();
@@ -243,6 +271,8 @@ export default function ProductsPage() {
     setFeedback("Produk berhasil diperbarui.");
   };
 
+  const qrProduct = activeQrProduct ?? savedProduct;
+
   const columns = [
     { key: "id", header: "ID Produk", render: (item: ProductWithCategory) => shortId(item.id) },
     { key: "name", header: "Produk" },
@@ -263,9 +293,14 @@ export default function ProductsPage() {
       key: "actions",
       header: "Aksi",
       render: (item: ProductWithCategory) => (
-        <Button variant="ghost" size="sm" className="text-primary font-semibold" onClick={() => openEditProductModal(item)}>
-          Edit
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => handleViewQr(item)} className="text-primary font-semibold">
+            <Eye className="h-4 w-4 mr-2" /> View QR
+          </Button>
+          <Button variant="ghost" size="sm" className="text-primary font-semibold" onClick={() => openEditProductModal(item)}>
+            Edit
+          </Button>
+        </div>
       )
     }
   ];
@@ -529,37 +564,30 @@ export default function ProductsPage() {
 
       <Modal
         isOpen={isQRModalOpen}
-        onClose={() => setIsQRModalOpen(false)}
-        title="Produk Berhasil Ditambahkan"
+        onClose={handleCloseQrModal}
+        title={activeQrProduct ? "QR Code Produk" : "Produk Berhasil Ditambahkan"}
         footer={
-          <Button onClick={() => setIsQRModalOpen(false)}>Tutup</Button>
+          <Button onClick={handleCloseQrModal}>Tutup</Button>
         }
       >
         <div className="flex flex-col items-center gap-6">
           <div className="bg-white p-4 rounded-lg border border-gray-200">
-            {savedProduct && (
+            {qrProduct && (
               <QRCodeCanvas
-                value={JSON.stringify({
-                  id: savedProduct.id,
-                  name: savedProduct.name,
-                })}
+                value={encodeProductQr(qrProduct)}
                 size={200}
               />
             )}
           </div>
           <div className="w-full space-y-2 text-center">
-            <h3 className="font-semibold text-lg">{savedProduct?.name}</h3>
-            <p className="text-sm text-muted">ID: {savedProduct?.id}</p>
-            <p className="text-sm text-muted">Kategori: {savedProduct?.product_categories?.name}</p>
-            <p className="text-sm font-medium">Harga: Rp {Number(savedProduct?.price ?? 0).toLocaleString('id-ID')}</p>
-            <p className="text-sm text-muted">Stok: {savedProduct?.stock} unit</p>
+            <h3 className="font-semibold text-lg">{qrProduct?.name}</h3>
+            <p className="text-sm text-muted">ID: {qrProduct?.id}</p>
+            <p className="text-sm text-muted">Kategori: {qrProduct?.product_categories?.name}</p>
+            <p className="text-sm font-medium">Harga: Rp {Number(qrProduct?.price ?? 0).toLocaleString('id-ID')}</p>
+            <p className="text-sm text-muted">Stok: {qrProduct?.stock} unit</p>
           </div>
         </div>
       </Modal>
     </div>
   )
-}
-
-function shortId(id: string) {
-  return id.slice(0, 8).toUpperCase();
 }
