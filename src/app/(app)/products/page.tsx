@@ -5,7 +5,7 @@ import { productCategories, products as initialProducts } from "@/data/mockData"
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search, Filter, QrCode } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 
@@ -16,6 +16,7 @@ export default function ProductsPage() {
   const [categorySearch, setCategorySearch] = useState("");
   const [feedback, setFeedback] = useState("");
   const [savedProduct, setSavedProduct] = useState<any>(null);
+  const [activeQrProduct, setActiveQrProduct] = useState<any>(null);
   
   // New product form state
   const [newProduct, setNewProduct] = useState({
@@ -68,8 +69,13 @@ export default function ProductsPage() {
     {
       key: "actions",
       header: "Aksi",
-      render: () => (
-        <Button variant="ghost" size="sm" className="text-primary font-semibold">Edit</Button>
+      render: (item: any) => (
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => { setActiveQrProduct(item); setIsQRModalOpen(true); }} className="text-primary font-semibold">
+            <QrCode className="h-4 w-4 mr-2" /> View QR
+          </Button>
+          <Button variant="ghost" size="sm" className="text-primary font-semibold">Edit</Button>
+        </div>
       )
     }
   ];
@@ -185,31 +191,31 @@ export default function ProductsPage() {
 
       <Modal 
         isOpen={isQRModalOpen} 
-        onClose={() => setIsQRModalOpen(false)} 
-        title="Produk Berhasil Ditambahkan"
+        onClose={() => { setIsQRModalOpen(false); setActiveQrProduct(null); }} 
+        title={savedProduct ? "Produk Berhasil Ditambahkan" : "QR Code Produk"}
         footer={
-          <Button onClick={() => setIsQRModalOpen(false)}>Tutup</Button>
+          <Button onClick={() => { setIsQRModalOpen(false); setActiveQrProduct(null); }}>Tutup</Button>
         }
       >
         <div className="flex flex-col items-center gap-6">
           <div className="bg-white p-4 rounded-lg border border-gray-200">
-              {savedProduct && (
-    <QRCodeCanvas
-      value={JSON.stringify({
-        id: savedProduct.id,
-        name: savedProduct.name,
-      })}
-      size={200}
-    />
-  )}
+              { (savedProduct || activeQrProduct) && (
+                <QRCodeCanvas
+                  value={JSON.stringify({
+                    id: (savedProduct || activeQrProduct).id,
+                    name: (savedProduct || activeQrProduct).name,
+                  })}
+                  size={200}
+                />
+              )}
             
           </div>
           <div className="w-full space-y-2 text-center">
-            <h3 className="font-semibold text-lg">{savedProduct?.name}</h3>
-            <p className="text-sm text-muted">ID: {savedProduct?.id}</p>
-            <p className="text-sm text-muted">Kategori: {savedProduct?.category}</p>
-            <p className="text-sm font-medium">Harga: Rp {savedProduct?.price.toLocaleString('id-ID')}</p>
-            <p className="text-sm text-muted">Stok: {savedProduct?.stock} unit</p>
+            <h3 className="font-semibold text-lg">{(savedProduct || activeQrProduct)?.name}</h3>
+            <p className="text-sm text-muted">ID: {(savedProduct || activeQrProduct)?.id}</p>
+            <p className="text-sm text-muted">Kategori: {(savedProduct || activeQrProduct)?.category}</p>
+            <p className="text-sm font-medium">Harga: Rp {(savedProduct || activeQrProduct)?.price.toLocaleString('id-ID')}</p>
+            <p className="text-sm text-muted">Stok: {(savedProduct || activeQrProduct)?.stock} unit</p>
           </div>
         </div>
       </Modal>
