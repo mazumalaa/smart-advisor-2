@@ -17,6 +17,18 @@ function getProductStatus(stock: number, minStock: number) {
   return "Available" as const;
 }
 
+function encodeProductQr(product: ProductWithCategory): string {
+  return JSON.stringify({
+    t: "p",
+    v: 2,
+    id: product.id,
+    b: product.business_id,
+    n: product.name,
+    p: Number(product.price),
+    c: product.product_categories?.name ?? "",
+  });
+}
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<ProductWithCategory[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
@@ -296,10 +308,7 @@ export default function ProductsPage() {
           <div className="bg-white p-4 rounded-lg border border-gray-200">
             {qrProduct && (
               <QRCodeCanvas
-                value={JSON.stringify({
-                  id: qrProduct.id,
-                  name: qrProduct.name,
-                })}
+                value={encodeProductQr(qrProduct)}
                 size={200}
               />
             )}
