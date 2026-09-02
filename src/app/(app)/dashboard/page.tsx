@@ -9,6 +9,7 @@ import { SimpleLineChart } from "@/components/charts/base-charts";
 import { Select } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { AIAssistant } from "@/components/ai/ai-assistant";
+import { formatCurrency, formatCompactCurrency } from "@/lib/utils";
 import type { Transaction, TransactionItem } from "@/lib/types";
 
 const DAY_NAMES = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
@@ -136,8 +137,8 @@ export default function DashboardPage() {
 
   const aiSummary =
     stats.totalTransactions > 0
-      ? `Bisnis Anda mencatat ${stats.totalTransactions} transaksi dengan total pendapatan Rp ${stats.revenue.toLocaleString(
-          "id-ID"
+      ? `Bisnis Anda mencatat ${stats.totalTransactions} transaksi dengan total pendapatan ${formatCurrency(
+          stats.revenue
         )} dan ${stats.productsSold} produk terjual.`
       : "Belum ada data penjualan. Mulai catat transaksi untuk melihat insight bisnis Anda.";
 
@@ -169,10 +170,10 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard title="Pendapatan" value={`Rp ${(stats.revenue / 1000000).toFixed(2)}M`} subtitle="total penjualan" />
+        <MetricCard title="Pendapatan" value={formatCompactCurrency(stats.revenue)} subtitle="total penjualan" />
         <MetricCard title="Total Transaksi" value={stats.totalTransactions} subtitle="transaksi selesai" />
         <MetricCard title="Produk Terjual" value={stats.productsSold} subtitle="unit terjual" />
-        <MetricCard title="Rata-rata Transaksi" value={`Rp ${(stats.aov / 1000).toFixed(1)}k`} subtitle="rata-rata per transaksi" />
+        <MetricCard title="Rata-rata Transaksi" value={formatCurrency(stats.aov)} subtitle="rata-rata per transaksi" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -206,7 +207,7 @@ export default function DashboardPage() {
                       <p className="font-medium">{idx + 1}. {prod.name}</p>
                       <p className="text-sm text-muted">{prod.sold} terjual</p>
                     </div>
-                    <p className="font-semibold text-primary">Rp {(prod.revenue / 1000000).toFixed(2)}M</p>
+                    <p className="font-semibold text-primary">{formatCurrency(prod.revenue)}</p>
                   </div>
                 ))}
               </div>
