@@ -7,7 +7,7 @@ import type { Product, ProductCategory, ProductWithCategory } from "@/lib/types"
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Filter } from "@/components/ui/icons";
+import { Plus, Search, Filter, Eye } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 
@@ -26,7 +26,7 @@ export default function ProductsPage() {
   const [categorySearch, setCategorySearch] = useState("");
   const [feedback, setFeedback] = useState("");
   const [savedProduct, setSavedProduct] = useState<ProductWithCategory | null>(null);
-
+  const [activeQrProduct, setActiveQrProduct] = useState<ProductWithCategory | null>(null);
   const [newProduct, setNewProduct] = useState({
     name: "",
     categoryId: "",
@@ -99,6 +99,7 @@ export default function ProductsPage() {
 
     setProducts((prev) => [saved, ...prev]);
     setSavedProduct(saved);
+    setActiveQrProduct(null);
     setIsAddModalOpen(false);
     setIsQRModalOpen(true);
     setCategorySearch("");
@@ -124,6 +125,19 @@ export default function ProductsPage() {
     setFeedback("Produk diperbarui.");
   };
 
+  const handleViewQr = (product: ProductWithCategory) => {
+    setSavedProduct(null);
+    setActiveQrProduct(product);
+    setIsQRModalOpen(true);
+  };
+
+  const handleCloseQrModal = () => {
+    setIsQRModalOpen(false);
+    setActiveQrProduct(null);
+  };
+
+  const qrProduct = activeQrProduct ?? savedProduct;
+
   const columns = [
     { key: "id", header: "ID Produk", render: (item: ProductWithCategory) => shortId(item.id) },
     { key: "name", header: "Produk" },
@@ -144,9 +158,14 @@ export default function ProductsPage() {
       key: "actions",
       header: "Aksi",
       render: (item: ProductWithCategory) => (
-        <Button variant="ghost" size="sm" className="text-primary font-semibold" onClick={() => handleEditProduct(item)}>
-          Edit
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => handleViewQr(item)} className="text-primary font-semibold">
+            <Eye className="h-4 w-4 mr-2" /> View QR
+          </Button>
+          <Button variant="ghost" size="sm" className="text-primary font-semibold" onClick={() => handleEditProduct(item)}>
+            Edit
+          </Button>
+        </div>
       )
     }
   ];
@@ -267,30 +286,30 @@ export default function ProductsPage() {
 
       <Modal
         isOpen={isQRModalOpen}
-        onClose={() => setIsQRModalOpen(false)}
-        title="Produk Berhasil Ditambahkan"
+        onClose={handleCloseQrModal}
+        title={activeQrProduct ? "QR Code Produk" : "Produk Berhasil Ditambahkan"}
         footer={
-          <Button onClick={() => setIsQRModalOpen(false)}>Tutup</Button>
+          <Button onClick={handleCloseQrModal}>Tutup</Button>
         }
       >
         <div className="flex flex-col items-center gap-6">
           <div className="bg-white p-4 rounded-lg border border-gray-200">
-            {savedProduct && (
+            {qrProduct && (
               <QRCodeCanvas
                 value={JSON.stringify({
-                  id: savedProduct.id,
-                  name: savedProduct.name,
+                  id: qrProduct.id,
+                  name: qrProduct.name,
                 })}
                 size={200}
               />
             )}
           </div>
           <div className="w-full space-y-2 text-center">
-            <h3 className="font-semibold text-lg">{savedProduct?.name}</h3>
-            <p className="text-sm text-muted">ID: {savedProduct?.id}</p>
-            <p className="text-sm text-muted">Kategori: {savedProduct?.product_categories?.name}</p>
-            <p className="text-sm font-medium">Harga: Rp {Number(savedProduct?.price ?? 0).toLocaleString('id-ID')}</p>
-            <p className="text-sm text-muted">Stok: {savedProduct?.stock} unit</p>
+            <h3 className="font-semibold text-lg">{qrProduct?.name}</h3>
+            <p className="text-sm text-muted">ID: {qrProduct?.id}</p>
+            <p className="text-sm text-muted">Kategori: {qrProduct?.product_categories?.name}</p>
+            <p className="text-sm font-medium">Harga: Rp {Number(qrProduct?.price ?? 0).toLocaleString('id-ID')}</p>
+            <p className="text-sm text-muted">Stok: {qrProduct?.stock} unit</p>
           </div>
         </div>
       </Modal>
