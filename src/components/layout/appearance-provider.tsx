@@ -68,35 +68,34 @@ type AppearanceContextValue = {
 const AppearanceContext = createContext<AppearanceContextValue | null>(null)
 
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<ThemeId>("base")
-  const [background, setBackground] = useState<BackgroundConfig>(defaultBackgroundConfig)
-
-  useEffect(() => {
+  const [theme, setTheme] = useState<ThemeId>(() => {
+    if (typeof window === "undefined") return "base"
     const storedTheme = window.localStorage.getItem("smart-advisor-theme") as ThemeId | null
+    return storedTheme && themes.some((item) => item.id === storedTheme) ? storedTheme : "base"
+  })
+
+  const [background, setBackground] = useState<BackgroundConfig>(() => {
+    if (typeof window === "undefined") return defaultBackgroundConfig
     const storedBgConfig = window.localStorage.getItem("smart-advisor-background-config")
-
-    if (storedTheme && themes.some((item) => item.id === storedTheme)) {
-      setTheme(storedTheme)
-    }
-
     if (storedBgConfig) {
       try {
         const parsed = JSON.parse(storedBgConfig) as BackgroundConfig
         if (parsed && typeof parsed === "object") {
-          setBackground({
+          return {
             enabled: Boolean(parsed.enabled),
             type: parsed.type || "none",
             url: parsed.url || "",
             opacity: typeof parsed.opacity === "number" ? parsed.opacity : 0.15,
             blur: typeof parsed.blur === "number" ? parsed.blur : 0,
             presetId: parsed.presetId || null,
-          })
+          }
         }
       } catch (e) {
         console.error("Failed to parse background configuration:", e)
       }
     }
-  }, [])
+    return defaultBackgroundConfig
+  })
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme

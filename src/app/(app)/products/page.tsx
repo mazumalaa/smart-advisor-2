@@ -60,9 +60,6 @@ export default function ProductsPage() {
     minStock: "",
   });
 
-  useEffect(() => {
-    setProductSearch(searchParams.get("search") ?? "");
-  }, [searchParams]);
 
   const resetProductForm = () => {
     setNewProduct({ name: "", categoryId: "", price: "", stock: "", minStock: "" });

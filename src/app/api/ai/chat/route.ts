@@ -161,7 +161,7 @@ Instruksi:
       try {
         const errorData = JSON.parse(errorText);
         console.error("Parsed error:", errorData);
-      } catch (e) {
+      } catch {
         console.error("Could not parse error as JSON");
       }
       throw new Error(

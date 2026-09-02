@@ -2,7 +2,7 @@
 
 import { LineChart as RechartsLine, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart as RechartsBar, Bar } from 'recharts'
 
-export function SimpleLineChart({ data, dataKey, seriesName }: { data: any[], dataKey: string, seriesName: string }) {
+export function SimpleLineChart<T extends object>({ data, dataKey, seriesName }: { data: T[], dataKey: string, seriesName: string }) {
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -31,7 +31,7 @@ export function SimpleLineChart({ data, dataKey, seriesName }: { data: any[], da
   )
 }
 
-export function SimpleBarChart({ data, xKey, yKey, seriesName }: { data: any[], xKey: string, yKey: string, seriesName: string }) {
+export function SimpleBarChart<T extends object>({ data, xKey, yKey, seriesName }: { data: T[], xKey: string, yKey: string, seriesName: string }) {
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">

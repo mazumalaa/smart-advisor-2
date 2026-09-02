@@ -42,14 +42,14 @@ export function TopNavbar({ userName, businessName, avatarUrl }: TopNavbarProps)
   const SEARCH_DEBOUNCE_MS = 1000
 
   useEffect(() => {
-    if (!globalSearch.trim()) {
-      setSearchSuggestions([])
-      setIsSearchModalOpen(false)
-      return
-    }
-
     const timeout = window.setTimeout(() => {
       const query = globalSearch.trim().toLowerCase()
+      if (!query) {
+        setSearchSuggestions([])
+        setIsSearchModalOpen(false)
+        return
+      }
+
       const suggestions = GLOBAL_SEARCH_SUGGESTIONS.filter((item) => {
         const searchableText = `${item.title} ${item.description} ${item.keywords.join(" ")}`.toLowerCase()
         return searchableText.includes(query)
