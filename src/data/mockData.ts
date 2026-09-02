@@ -114,7 +114,7 @@ export const salesAnalytics = {
   productsGrowth: 15.2,
   aov: 43309,
   aovGrowth: 4.1,
-  
+
   trendData: [
     { day: "Sen", revenue: 450000 },
     { day: "Sel", revenue: 520000 },
@@ -124,14 +124,14 @@ export const salesAnalytics = {
     { day: "Sab", revenue: 1200000 },
     { day: "Min", revenue: 950000 },
   ],
-  
+
   productPerformance: [
     { name: "Kopi Susu", sold: 428, revenue: 8560000 },
     { name: "Americano", sold: 286, revenue: 4290000 },
     { name: "Croissant", sold: 174, revenue: 3480000 },
     { name: "Matcha Latte", sold: 142, revenue: 3124000 },
   ],
-  
+
   aiSummary: "Bisnis menunjukkan pertumbuhan positif sebesar 12.8% dalam 30 hari terakhir. Penjualan tertinggi terjadi pada hari Sabtu."
 };
 
